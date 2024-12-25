@@ -120,7 +120,7 @@ PoseMasterShear/
 
 ### 示例图片
 
-| 输入图像 | 骨骼图 ｜ 分割掩码 | 人物抠图 | 轮廓图 |
+| 输入图像 | 骨骼图 | 分割掩码 | 人物抠图 | 轮廓图 |
 |:--------:|:--------:|:--------:|:------:|:------:|
 | <img src="demo/5.jpg" width="150"> | <img src="demo/5_mask_pose.png" width="150"> | <img src="demo/5_mask_mask.png" width="150"> | <img src="demo/5_mask_person.png" width="150"> | <img src="demo/5_mask_outline.png" width="150"> |
 
