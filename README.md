@@ -33,7 +33,7 @@
    - 自动移除人脸区域
 
 4. **边缘检测**
-   - 使用 HED 检测器生成细节丰富的边缘
+   - 使用 HED 检测器生成细��丰富的边缘
    - 处理分辨率为 1024
    - 保持人脸区域的隐私保护
 
@@ -55,19 +55,32 @@
 
 ## 使用方法
 
-``` python
- from pose_outline import PoseOutlineGenerator
-    # 初始化生成器
-    generator = PoseOutlineGenerator(
-    sam_checkpoint="sam_vit_b_01ec64.pth",
-    model_type="vit_b"
-    )
-    # 处理图像
-    generator.process_image(
-    input_path="input.jpg",
-    output_path="output.png"
-    )
+### 安装依赖
+```bash
+pip install segment-anything mediapipe controlnet_aux opencv-python pillow torch
 ```
+
+### 下载模型
+1. 下载 SAM 模型权重文件 `sam_vit_b_01ec64.pth`
+2. 将模型文件放在项目根目录
+
+### 目录结构
+```
+PoseMasterShear/
+├── main.py
+├── pose_outline.py
+├── sam_vit_b_01ec64.pth
+└── test/
+    ├── 1.jpg
+    ├── 2.jpg
+    └── ...
+```
+
+### 输出文件
+程序会在输出目录生成三个文件：
+- `2_mask.png`: 人物分割掩码
+- `2_person.png`: 带透明背景的人物图像
+- `2_outline.png`: 人物轮廓图像
 
 ## 输出示例
 
