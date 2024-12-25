@@ -1,0 +1,20 @@
+
+# dependencies
+.history
+__pycache__
+.venv
+test
+*.pyc
+*.pyo
+*.pyd
+*.pyo
+*.pyd
+*.pyo
+*.pyd
+*.pyo
+*.pyd
+
+*.pth
+
+
+.DS_Store
