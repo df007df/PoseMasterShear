@@ -122,10 +122,10 @@ PoseMasterShear/
 
 | 输入图像 | 骨骼图 ｜ 分割掩码 | 人物抠图 | 轮廓图 |
 |:--------:|:--------:|:--------:|:------:|:------:|
-| ![输入](demo/5.jpg) | ![骨骼](demo/5_mask_pose.png) | ![掩码](demo/5_mask_mask.png) | ![抠图](demo/5_mask_person.png) | ![轮廓](demo/5_mask_outline.png) 
+| <img src="demo/5.jpg" width="150"> | <img src="demo/5_mask_pose.png" width="150"> | <img src="demo/5_mask_mask.png" width="150"> | <img src="demo/5_mask_person.png" width="150"> | <img src="demo/5_mask_outline.png" width="150"> |
 
 ### 输出说明
-- 掩码图�� (`*_mask.png`): 黑白二值图，显示分割结果
+- 掩码图 (`*_mask.png`): 黑白二值图，显示分割结果
 - 人物图像 (`*_person.png`): 带透明背景的原始人物图像
 - 轮廓图像 (`*_outline.png`): 黑色背景的透明轮廓图
 - 骨骼图像 (`*_pose.png`): 显示检测到的人体骨骼关键点和连接线
