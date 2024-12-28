@@ -1,118 +1,159 @@
-# 🎭 PoseMasterShear - AI Portrait Outline Generator
+# PoseMasterShear
+
+A portrait segmentation and outline extraction tool based on SAM (Segment Anything Model) and MediaPipe.
 
 [中文文档](README_CN.md)
 
-> An AI-powered portrait outline generation tool that combines SAM segmentation, depth estimation, and pose detection to achieve high-quality portrait extraction and outline generation while protecting privacy.
+## Features
 
-## 🌟 Features
-
-- 🤖 Smart Human Pose Detection (MediaPipe)
-- 🎯 Precise Portrait Segmentation (SAM)
-- 🔍 Depth-Assisted Edge Enhancement
-- ✨ Rich Detail Edge Generation (HED)
-- 🎨 Multiple Output Format Support
-- 🔒 Smart Face Privacy Protection
-
-## Example Outputs
-
-| Input | Pose | Mask | Portrait | Outline |
-|:-----:|:----:|:----:|:--------:|:-------:|
-| <img src="demo/5.jpg" width="150"> | <img src="demo/5_mask_pose.png" width="150"> | <img src="demo/5_mask_mask.png" width="150"> | <img src="demo/5_mask_person.png" width="150"> | <img src="demo/5_mask_outline.png" width="150"> |
-
-## Quick Start
-
-### Installation
-```bash
-# For Apple Silicon (M1/M2/M3/M4)
-pip install torch torchvision torchaudio
-
-# Other dependencies
-pip install segment-anything mediapipe controlnet_aux opencv-python pillow
-```
-
-### Usage
-```python
-generator = PoseOutlineGenerator(
-    sam_checkpoint="sam_vit_b_01ec64.pth",
-    model_type="vit_b",
-    device="mps"  # or "cuda"/"cpu"
-)
-
-generator.process_image("input.jpg", "output.png")
-```
-
-## Processing Pipeline
-
-1. **Pose Detection**
-   - Uses MediaPipe Pose for skeleton keypoint detection
-   - Provides precise prompt points for SAM
-   - Extracts facial keypoints for privacy protection
-
-2. **Depth Estimation**
-   - Generates scene depth map using MiDaS model
-   - Estimates edge depth based on pose keypoints
-   - Applies depth filtering only to edge regions
-   - Preserves main subject segmentation results
-
-3. **Portrait Segmentation**
-   - Performs segmentation using SAM model
-   - Precise positioning based on pose keypoints
-   - Optimizes edges using depth information
-   - Creates natural face mask using facial keypoints
-   - Smooths face region with gradient edges
-   - Quality control parameters:
-     - mask_threshold: 0.95
-     - iou_threshold: 0.99
-     - stability_score_thresh: 0.99
-
-## Output Files
-
-- Mask (`*_mask.png`): Binary mask showing segmentation
-- Portrait (`*_person.png`): Original portrait with transparency
-- Outline (`*_outline.png`): Outline with transparent background
-- Pose (`*_pose.png`): Visualization of pose keypoints
-
-## Parameter Tuning
-
-### SAM Parameters
-- `mask_threshold`: Controls mask generation (0-1)
-- `iou_threshold`: Controls region overlap (0-1)
-- `stability_score_thresh`: Controls segmentation stability (0-1)
-
-### Edge Processing
-- Edge region definition: `kernel_size = 31`
-- Depth filtering applied only to edges
-- Main subject region preserved
-
-### Morphological Processing
-- Uses 5x5 kernel for closing operation
-- Adjustable kernel size for strength control
-
-## Device Support
-
-### GPU Support
-- Automatically detects available GPU
-- Uses CUDA acceleration if available
-- Manual device selection supported
-
-### Apple Silicon Optimization
-- Automatic MPS backend utilization
-- Metal acceleration via `device="mps"`
-
-## Notes
-
-1. Ensure clear visibility of subject in input image
-2. High-quality input images recommended
-3. Parameters may need adjustment per image
-4. Facial regions automatically removed for privacy
+- Automatic portrait segmentation
+- Precise outline extraction
+- Pose detection
+- Multiple output formats
+- Automatic OSS storage
+- Multi-user support
 
 ## Requirements
 
-- segment-anything
-- mediapipe
-- controlnet_aux
-- transformers
-- torch >= 2.0
-- opencv-python
-- numpy
-- Pillow
+- Python 3.9+
+- PyTorch
+- CUDA (optional, for GPU acceleration)
+- Apple Silicon (optional, supports MPS acceleration)
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/PoseMasterShear.git
+cd PoseMasterShear
+```
+
+2. Create virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# or
+.venv\Scripts\activate  # Windows
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+4. Download SAM model weights:
+```bash
+wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
+
+## Configuration
+
+1. Set OSS environment variables:
+```bash
+export OSS_ACCESS_KEY_ID="your-access-key-id"
+export OSS_ACCESS_KEY_SECRET="your-access-key-secret"
+export OSS_ENDPOINT="oss-cn-hangzhou.aliyuncs.com"
+export OSS_BUCKET_NAME="your-bucket-name"
+```
+
+2. Modify configuration in `config.py`:
+```python
+IMAGE_CONFIG = {
+    'base_dir': '/path/to/your/base/dir',  # Change to your base directory
+    ...
+}
+```
+
+## Usage
+
+### Basic Usage
+
+```python
+from image_processor import ImageProcessor
+
+# Initialize processor
+processor = ImageProcessor(device="mps")  # Options: "mps", "cuda", "cpu"
+
+# Process image
+results = processor.process_image(
+    user_id="123",              # User ID
+    input_source="image.jpg",   # Input image path
+    move_file=False,            # Whether to move source file
+    custom_name=None            # Custom output filename (optional)
+)
+```
+
+### Output File Structure
+
+```
+base_dir/
+└── user123/
+    ├── pose_input/
+    │   ├── image1.jpg         # Original input image
+    │   └── image1_outline.png # Final outline image
+    └── pose_mask/
+        └── image1/            # Processing results directory
+            ├── mask.png       # Mask image
+            ├── outline.png    # Outline image
+            ├── pose.jpg       # Pose image
+            └── person.png     # Portrait segmentation image
+```
+
+### OSS Storage Structure
+
+```
+PoseMasterShear/
+└── user123/
+    ├── pose_input/
+    │   ├── image1.jpg
+    │   └── image1_outline.png
+    └── pose_mask/
+        └── image1/
+            ├── mask.png
+            ├── outline.png
+            ├── pose.jpg
+            └── person.png
+```
+
+## Return Values
+
+After successful processing, returns a dictionary containing OSS URLs for all generated images:
+
+```python
+{
+    ImageType.INPUT: "https://...input.jpg",
+    ImageType.MASK_OUTLINE: "https://...outline.png",
+    ImageType.MASK_MASK: "https://...mask.png",
+    ImageType.MASK_POSE: "https://...pose.jpg",
+    ImageType.MASK_PERSON: "https://...person.png"
+}
+```
+
+## Important Notes
+
+1. Ensure all environment variables are correctly set
+2. Ensure OSS Bucket has proper access permissions
+3. Absolute paths are recommended for input paths
+4. For batch processing, consider using multi-threading or async processing
+
+## Error Handling
+
+- Clear error messages for missing environment variables
+- Appropriate error messages for file access issues
+- Detailed error logs for OSS upload failures
+
+## Performance Optimization
+
+1. Device Selection:
+   - Use MPS on Apple Silicon devices
+   - Use CUDA on NVIDIA GPUs
+   - Fallback to CPU if no GPU is available
+
+2. Batch Processing:
+   - Process multiple images in parallel
+   - Use async I/O for file operations
+   - Implement proper error handling for each thread
+
+## License
+
+MIT License

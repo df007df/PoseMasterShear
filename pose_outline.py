@@ -9,15 +9,17 @@ import torch
 from controlnet_aux import HEDdetector
 from transformers import pipeline
 import torch.nn.functional as F
+from oss_uploader import OSSUploader
 
 class PoseOutlineGenerator:
-    def __init__(self, sam_checkpoint, model_type="vit_b", device=None):
+    def __init__(self, sam_checkpoint, model_type="vit_b", device=None, oss_config=None):
         """
         初始化生成器
         Args:
             sam_checkpoint: SAM 模型权重路径
             model_type: SAM 模型类型
             device: 运行设备
+            oss_config: OSS 配置信息
         """
         # 自动选择最佳设备
         if device is None:
@@ -80,6 +82,16 @@ class PoseOutlineGenerator:
             device="cpu"  # 目前 transformers 在 MPS 上可能不稳定，统一使用 CPU
         )
         print(f"Depth estimator device: cpu")
+        
+        # 初始化 OSS 上传器
+        self.oss_uploader = None
+        if oss_config:
+            self.oss_uploader = OSSUploader(
+                access_key_id=oss_config['access_key_id'],
+                access_key_secret=oss_config['access_key_secret'],
+                endpoint=oss_config['endpoint'],
+                bucket_name=oss_config['bucket_name']
+            )
 
     def get_pose_points(self, image):
         """
@@ -345,36 +357,35 @@ class PoseOutlineGenerator:
 
     def process_image(self, input_path, output_path):
         """
-        处理图像并保存结果
+        处理图像并保��结果
         Args:
             input_path: 输入图像路径
-            output_path: ��出图像路径
+            output_path: 输出图像路径
         Returns:
-            bool: 是否成功
+            tuple: (是否成功, 上传结果)
         """
         try:
             # 获取输出路径的目录和文件名
-            output_dir = os.path.dirname(output_path)
-            filename_without_ext = os.path.splitext(os.path.basename(output_path))[0]
-            
+            output_dir = output_path
+          
             # 构建输出路径
-            mask_output_path = os.path.join(output_dir, f"{filename_without_ext}_mask.png")
-            person_output_path = os.path.join(output_dir, f"{filename_without_ext}_person.png")
-            outline_output_path = os.path.join(output_dir, f"{filename_without_ext}_outline.png")
-            pose_output_path = os.path.join(output_dir, f"{filename_without_ext}_pose.png")
+            mask_output_path = os.path.join(output_dir, f"mask.png")
+            person_output_path = os.path.join(output_dir, f"person.png")
+            outline_output_path = os.path.join(output_dir, f"outline.png")
+            pose_output_path = os.path.join(output_dir, f"pose.png")
             
             # 读取图像
             image = cv2.imread(input_path)
             if image is None:
                 print(f"Error: Could not read image '{input_path}'")
-                return False
+                return False, None
             image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
             
             # 1. 获取姿态信息并生成 mask
             results = self.pose.process(image_rgb)
             if not results.pose_landmarks:
                 print("No pose detected in the image")
-                return False
+                return False, None
             
             # 生成并保存骨骼图
             pose_image = self.draw_pose_landmarks(image_rgb, results)
@@ -384,7 +395,7 @@ class PoseOutlineGenerator:
             # 生成 mask
             mask = self.segment_person(image_rgb, results)
             if mask is None:
-                return False
+                return False, None
             
             # 保存 mask 图像
             mask_image = Image.fromarray(mask * 255)
@@ -409,7 +420,14 @@ class PoseOutlineGenerator:
             outline_image = Image.fromarray(outline)
             outline_image.save(outline_output_path)
             
-            return True
+            image_results = {
+                    'mask': mask_output_path,
+                    'person':person_output_path,
+                    'outline': outline_output_path,
+                    'pose': pose_output_path,
+            }
+            
+            return True, image_results
         except Exception as e:
             print(f"Error processing image: {str(e)}")
-            return False 
+            return False, None 

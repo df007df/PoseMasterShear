@@ -1,118 +1,159 @@
-# 🎭 PoseMasterShear - AI 人物轮廓生成工具
+# PoseMasterShear
 
-[English Documentation](README.md)
+基于 SAM (Segment Anything Model) 和 MediaPipe 的人像分割和轮廓提取工具。
 
-> 一款基于 AI 的智能人物轮廓生成工具，结合 SAM 分割、深度估计和骨骼检测，实现高质量的人物抠图和轮廓提取，同时保护隐私。
+[English](README.md)
 
-## 🌟 特性
+## 功能特点
 
-- 🤖 智能人体骨骼检测 (MediaPipe)
-- 🎯 精确人物分割 (SAM)
-- 🔍 深度辅助边缘优化
-- ✨ 细节丰富的轮廓生成 (HED)
-- 🎨 多种输出格式支持
-- 🔒 智能人脸隐私保护
+- 自动人像分割
+- 精确轮廓提取
+- 姿态识别
+- 支持多种输出格式
+- 自动 OSS 存储
+- 多用户支持
 
-## 效果展示
+## 环境要求
 
-| 输入图像 | 骨骼图 | 分割掩码 | 人物抠图 | 轮廓图 |
-|:--------:|:------:|:--------:|:--------:|:------:|
-| <img src="demo/5.jpg" width="150"> | <img src="demo/5_mask_pose.png" width="150"> | <img src="demo/5_mask_mask.png" width="150"> | <img src="demo/5_mask_person.png" width="150"> | <img src="demo/5_mask_outline.png" width="150"> |
+- Python 3.9+
+- PyTorch
+- CUDA (可选，用于 GPU 加速)
+- Apple Silicon (可选，支持 MPS 加速)
 
-## 快速开始
+## 安装步骤
 
-### 安装依赖
+1. 克隆仓库：
 ```bash
-# 为 Apple Silicon (M1/M2/M3/M4) 安装 PyTorch
-pip install torch torchvision torchaudio
-
-# 安装其他依赖
-pip install segment-anything mediapipe controlnet_aux opencv-python pillow transformers
+git clone https://github.com/yourusername/PoseMasterShear.git
+cd PoseMasterShear
 ```
 
-### 使用方法
+2. 创建虚拟环境：
+```bash
+python -m venv .venv
+source .venv/bin/activate  # Linux/Mac
+# 或
+.venv\Scripts\activate  # Windows
+```
+
+3. 安装依赖：
+```bash
+pip install -r requirements.txt
+```
+
+4. 下载 SAM 模型权重：
+```bash
+wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
+
+## 配置说明
+
+1. 设置 OSS 环境变量：
+```bash
+export OSS_ACCESS_KEY_ID="你的AccessKey ID"
+export OSS_ACCESS_KEY_SECRET="你的AccessKey Secret"
+export OSS_ENDPOINT="oss-cn-hangzhou.aliyuncs.com"
+export OSS_BUCKET_NAME="你的Bucket名称"
+```
+
+2. 修改 `config.py` 中的配置：
 ```python
-generator = PoseOutlineGenerator(
-    sam_checkpoint="sam_vit_b_01ec64.pth",
-    model_type="vit_b",
-    device="mps"  # 或 "cuda"/"cpu"
-)
-
-generator.process_image("input.jpg", "output.png")
+IMAGE_CONFIG = {
+    'base_dir': '/path/to/your/base/dir',  # 修改为你的基础目录
+    ...
+}
 ```
 
-## 处理流程
+## 使用方法
 
-1. **骨骼检测**
-   - 使用 MediaPipe Pose 检测人体骨骼关键点
-   - 为 SAM 提供精确的提示点
-   - 同时获取人脸关键点用于人脸区域识别
+### 基本使用
 
-2. **深度估计**
-   - 使用 MiDaS 模型生成场景深度图
-   - 基于骨骼关键点位置估计边缘深度
-   - 仅在边缘区域应用深度过滤
-   - 保持主体区域分割结果不变
+```python
+from image_processor import ImageProcessor
 
-3. **人物分割**
-   - 使用 SAM 模型进行分割
-   - 基于骨骼关键点进行精确定位
-   - 在边缘区域结合深度信息优化分割
-   - 使用人脸关键点创建自然的人脸遮罩
-   - 通过渐变边缘平滑处理人脸区域
-   - 通过参数控制分割质量：
-     - mask_threshold: 0.95 (掩码阈值)
-     - iou_threshold: 0.99 (IoU 阈值)
-     - stability_score_thresh: 0.99 (稳定性分数阈值)
+# 初始化处理器
+processor = ImageProcessor(device="mps")  # 可选: "mps", "cuda", "cpu"
 
-## 输出文件
+# 处理图片
+results = processor.process_image(
+    user_id="123",              # 用户ID
+    input_source="image.jpg",   # 输入图片路径
+    move_file=False,            # 是否移动源文件
+    custom_name=None            # 自定义输出文件名（可选）
+)
+```
 
-- 掩码图 (`*_mask.png`): 黑白二值图，显示分割结果
-- 人物图像 (`*_person.png`): 带透明背景的原始人物图像
-- 轮廓图像 (`*_outline.png`): 黑色背景的透明轮廓图
-- 骨骼图像 (`*_pose.png`): 显示检测到的人体骨骼关键点
+### 输出文件结构
 
-## 参数调优
+```
+base_dir/
+└── user123/
+    ├── pose_input/
+    │   ├── image1.jpg         # 原始输入图片
+    │   └── image1_outline.png # 最终轮廓图片
+    └── pose_mask/
+        └── image1/            # 处理结果目录
+            ├── mask.png       # 遮罩图片
+            ├── outline.png    # 轮廓图片
+            ├── pose.jpg       # 姿态图片
+            └── person.png     # 人像分割图片
+```
 
-### SAM 参数
-- `mask_threshold`: 控制掩码生成 (0-1)
-- `iou_threshold`: 控制区域重叠 (0-1)
-- `stability_score_thresh`: 控制分割稳定性 (0-1)
+### OSS 存储结构
 
-### 边缘处理
-- 边缘区域定义: `kernel_size = 31`
-- 深度过滤仅应用于边缘
-- 保持主体区域不变
+```
+PoseMasterShear/
+└── user123/
+    ├── pose_input/
+    │   ├── image1.jpg
+    │   └── image1_outline.png
+    └── pose_mask/
+        └── image1/
+            ├── mask.png
+            ├── outline.png
+            ├── pose.jpg
+            └── person.png
+```
 
-### 形态学处理
-- 使用 5x5 核心进行闭运算
-- 可调整核心大小控制强度
+## 返回结果
 
-## 设备支持
+处理成功后返回一个字典，包含所有生成图片的 OSS URL：
 
-### GPU 支持
-- 自动检测可用的 GPU
-- 支持 CUDA 加速
-- 可手动指定设备
-
-### Apple Silicon 优化
-- 自动使用 Metal Performance Shaders (MPS) 后端
-- 通过 `device="mps"` 使用 Metal 加速
+```python
+{
+    ImageType.INPUT: "https://...input.jpg",
+    ImageType.MASK_OUTLINE: "https://...outline.png",
+    ImageType.MASK_MASK: "https://...mask.png",
+    ImageType.MASK_POSE: "https://...pose.jpg",
+    ImageType.MASK_PERSON: "https://...person.png"
+}
+```
 
 ## 注意事项
 
-1. 确保输入图像中有清晰可见的人物
-2. 建议使用高质量的输入图像以获得更好的效果
-3. 可能需要根据具体图像调整参数
-4. 人脸区域会被自动移除以保护隐私
+1. 确保已正确设置所有环境变量
+2. 确保 OSS Bucket 具有正确的访问权限
+3. 建议使用绝对路径作为输入路径
+4. 对于批量处理，建议使用多线程或异步处理
 
-## 依赖项
+## 错误处理
 
-- segment-anything
-- mediapipe
-- controlnet_aux
-- transformers
-- torch >= 2.0
-- opencv-python
-- numpy
-- Pillow
+- 如果环境变量未设置，会抛出明确的错误信息
+- 文件不存在或无法访问时会返回相应的错误信息
+- OSS 上传失败会提供详细的错误日志
+
+## 性能优化
+
+1. 设备选择：
+   - Apple Silicon 设备使用 MPS
+   - NVIDIA 显卡使用 CUDA
+   - 无 GPU 时自动使用 CPU
+
+2. 批量处理：
+   - 支持并行处理多张图片
+   - 使用异步 I/O 进行文件操作
+   - 为每个线程实现适当的错误处理
+
+## 许可证
+
+MIT License

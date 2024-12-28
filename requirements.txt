@@ -1,0 +1,24 @@
+# Web Framework
+Flask>=2.0.0
+
+# PyTorch and Vision
+torch>=2.0.0
+torchvision>=0.15.0
+
+# Image Processing
+Pillow>=9.0.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+
+# Cloud Storage
+oss2>=2.18.0
+
+# HTTP Client
+requests>=2.31.0
+
+# Segment Anything Model Dependencies
+matplotlib>=3.7.0
+scipy>=1.10.0
+
+# Development Tools
+python-dotenv>=1.0.0  # 环境变量管理 
