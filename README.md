@@ -4,6 +4,19 @@ A portrait segmentation and outline extraction tool based on SAM (Segment Anythi
 
 [中文文档](README_CN.md)
 
+## Demo
+
+Here are some examples of what PoseMasterShear can do:
+
+| Input Image | Pose Detection | Portrait Segmentation | Outline Extraction |
+|------------|----------------|----------------------|-------------------|
+| ![Original Image](demo/5.jpg) | ![Pose](demo/5_mask_pose.png) | ![Portrait](demo/5_mask_person.png) | ![Outline](demo/5_mask_outline.png) |
+
+- **Original Image**: The input image to be processed
+- **Pose Detection**: Accurate pose landmarks detection
+- **Portrait Segmentation**: Precise separation of the person from the background
+- **Outline Extraction**: Clean outline generation from the portrait
+
 ## Features
 
 - Automatic portrait segmentation
